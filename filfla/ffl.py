@@ -9,6 +9,7 @@ from enum import Enum, unique
 
 @unique
 class FileFlags(Enum):
+    """Flags"""
     HIDDEN = stat.UF_HIDDEN
     APPEND = stat.UF_APPEND
     COMPRESSED = stat.UF_COMPRESSED
@@ -22,6 +23,7 @@ class FileFlags(Enum):
 
 
 class FilFla:
+    """File Flagging"""
 
     def __init__(self, pth: str):
         if os.path.exists(pth):
@@ -30,59 +32,48 @@ class FilFla:
             raise FileExistsError(f'{pth}\nis not exist!')
         self.flags = FileFlags._member_names_
 
-    def prt(self, st: int, p1: bool = True, flname: str = None ):
+    def prt(self):
+        """Print status file's flags"""
 
-        match p1:
-            case True:
-                print(
-                    f"{self.pth}\n"
-                    f"Flag status: {st}"
-                )
-            case False:
-                tx = f"{st} - NORMAL" if flname is None else f"{st} - {flname}"
-                print(
-                    f"\n{self.pth}\n"
-                    f"Status Change: {tx}"
-                )
+        if ckv:= self._chekers():
+            print(
+                f"{self.pth}\n"
+                f"Flag status: {ckv}"
+            )
+        else:
+            print(
+                f"{self.pth}\n"
+                f"Status: NORMAL"
+            )
 
     def _chekers(self):
+        """Return status flags of a file"""
         st = os.stat(self.pth).st_flags
         try:
-            if st:
-                return str(FileFlags(st))
+            ckv = set(
+                FileFlags(i.value).name for i in dict(FileFlags.__members__).values() if st & i.value == i.value
+            )
+            if ckv:
+                return str(ckv)
             else:
                 return None
         except Exception as e:
             print(e)
 
     def flagger(self, flname: str):
+        """Change file's flags"""
 
         if flname in self.flags:
-            st = None
             flag = FileFlags[flname].value
-            if (ck := self._chekers()) is None:
-                st = os.stat(self.pth).st_flags
-                self.prt(st)
-                os.chflags(self.pth, st ^ flag)
-            else:
-                ck = FileFlags[ck].value
-                self.prt(ck)
-                os.chflags(self.pth, ck ^ ck)
-                if flag != ck:
-                    st = os.stat(self.pth).st_flags
-                    os.chflags(self.pth, st ^ flag)
-                
-            match st:
-                case 0:
-                    self.prt(os.stat(self.pth).st_flags, False, flname)
-                case _:
-                    self.prt(os.stat(self.pth).st_flags, False)
-            del st, flag, ck
+            st = os.stat(self.pth).st_flags
+            os.chflags(self.pth, st ^ flag)
+            self.prt()  
         else:
-            print("Not implemented!")
+            print('Not Implemeted')
 
 
 def main():
+    """CLI"""
     parser = argparse.ArgumentParser(
         prog="File Flagger", description="File flag status check and change"
     )
@@ -96,15 +87,8 @@ def main():
             )
             match cho.upper():
                 case "C":
-                    try:
-                        x = FilFla(path)
-                        if st := x._chekers():
-                            x.prt(FileFlags[st].value)
-                            print(f"Flag: {FileFlags[st].name}")
-                        else:
-                            print(f"{path}\nFlag: {st}")
-                    except Exception as e:
-                        print(e)
+                    x = FilFla(path)
+                    x.prt()
                 case "A":
                     try:
                         flag = input(f"Change flag? {FileFlags._member_names_} ")
