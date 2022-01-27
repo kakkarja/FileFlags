@@ -5,6 +5,7 @@
 import os, stat
 import argparse
 from enum import Enum, unique
+from excptr import excp
 
 
 @unique
@@ -29,29 +30,27 @@ class FilFla:
         if os.path.exists(pth):
             self.pth = pth
         else:
-            raise FileExistsError(f'{pth}\nis not exist!')
+            raise FileExistsError(f"{pth}\nis not exist!")
         self.flags = FileFlags._member_names_
 
+    @excp(0)
     def prt(self):
         """Print status file's flags"""
 
         if ckv:= self._chekers():
-            print(
-                f"{self.pth}\n"
-                f"Flag status: {ckv}"
-            )
+            print(f"{self.pth}\nFlag status: {ckv}")
         else:
-            print(
-                f"{self.pth}\n"
-                f"Status: NORMAL"
-            )
+            print(f"{self.pth}\nStatus: NORMAL")
 
+    @excp(0)
     def _chekers(self):
         """Return status flags of a file"""
         st = os.stat(self.pth).st_flags
         try:
             ckv = set(
-                FileFlags(i.value).name for i in dict(FileFlags.__members__).values() if st & i.value == i.value
+                FileFlags(i.value).name
+                for i in dict(FileFlags.__members__).values()
+                if st & i.value == i.value
             )
             if ckv:
                 return str(ckv)
@@ -60,6 +59,7 @@ class FilFla:
         except Exception as e:
             print(e)
 
+    @excp(0)
     def flagger(self, flname: str):
         """Change file's flags"""
 
@@ -69,9 +69,10 @@ class FilFla:
             os.chflags(self.pth, st ^ flag)
             self.prt()  
         else:
-            print('Not Implemeted')
+            print("Not Implemeted")
 
 
+@excp(0)
 def main():
     """CLI"""
     parser = argparse.ArgumentParser(
@@ -90,12 +91,9 @@ def main():
                     x = FilFla(path)
                     x.prt()
                 case "A":
-                    try:
-                        flag = input(f"Change flag? {FileFlags._member_names_} ")
-                        x = FilFla(path)
-                        x.flagger(flag)
-                    except Exception as e:
-                        print(e)
+                    flag = input(f"Change flag? {FileFlags._member_names_} ")
+                    x = FilFla(path)
+                    x.flagger(flag)
                 case _:
                     print("Abort!")
         case _:
